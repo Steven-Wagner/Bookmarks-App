@@ -5,36 +5,34 @@ import BookmarkList from './BookmarkList/BookmarkList';
 import Nav from './Nav/Nav';
 import config from './config';
 import './App.css';
-
-const bookmarks = [
-  // {
-  //   id: 0,
-  //   title: 'Google',
-  //   url: 'http://www.google.com',
-  //   rating: '3',
-  //   desc: 'Internet-related services and products.'
-  // },
-  // {
-  //   id: 1,
-  //   title: 'Thinkful',
-  //   url: 'http://www.thinkful.com',
-  //   rating: '5',
-  //   desc: '1-on-1 learning to accelerate your way to a new high-growth tech career!'
-  // },
-  // {
-  //   id: 2,
-  //   title: 'Github',
-  //   url: 'http://www.github.com',
-  //   rating: '4',
-  //   desc: 'brings together the world\'s largest community of developers.'
-  // }
-];
+import BookmarksContext from './BookmarksContext';
+import EditBookmark from './EditBookmark/EditBookmark';
 
 class App extends Component {
   state = {
-    bookmarks,
+    bookmarks: [],
     error: null,
   };
+
+  updateBookmark = updatedBookmark => {
+       const newBookmarks = this.state.bookmarks.map(bookmark =>
+         (bookmark.id === updatedBookmark.id)
+           ? updatedBookmark
+           : bookmark
+       )
+       this.setState({
+         bookmarks: newBookmarks
+       })
+     };
+
+  deleteBookmark = bookmarkId => {
+    const newBookmarks = this.state.bookmarks.filter(bm =>
+      bm.id !== bookmarkId
+    )
+    this.setState({
+      bookmarks: newBookmarks
+    })
+  }
 
   setBookmarks = bookmarks => {
     this.setState({
@@ -51,10 +49,9 @@ class App extends Component {
 
   componentDidMount() {
     fetch(config.API_ENDPOINT, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'content-type': 'application/json',
-        'Authorization': `Bearer ${config.API_KEY}`
+        "Authorization": "Bearer b38098fc-f83a-45f0-af69-672e6ba147a7"
       }
     })
       .then(res => {
@@ -68,29 +65,33 @@ class App extends Component {
   }
 
   render() {
-    const { bookmarks } = this.state
+    const contextValue = {
+      bookmarks: this.state.bookmarks,
+      addBookmark: this.addBookmark,
+      deleteBookmark: this.deleteBookmark,
+      updateBookmark: this.updateBookmark
+    }
     return (
       <main className='App'>
         <h1>Bookmarks!</h1>
-        <Nav />
-        <div className='content' aria-live='polite'>
-        <Route
-            path='/add-bookmark'
-            render={({history}) =>
-              <AddBookmark
-                onAddBookmark={this.addBookmark}
-                onClickCancel={() => history.push('/')}
-              />}
-          />
-          <Route
-            exact
-            path='/'
-            render={() =>
-              <BookmarkList
-                bookmarks={bookmarks}
-              />}
-          />
-        </div>
+        <BookmarksContext.Provider value={contextValue}>
+          <Nav />
+          <div className='content' aria-live='polite'>
+            <Route
+              path='/add-bookmark'
+              component={AddBookmark}
+            />
+            <Route
+              exact
+              path='/'
+              component={BookmarkList}
+            />
+            <Route
+              exact path='/edit/:id'
+              component={EditBookmark}
+            />
+          </div>
+        </BookmarksContext.Provider>
       </main>
     );
   }
